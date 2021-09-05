@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:todo_app/helpers/database_helper.dart';
+import 'package:todo_app/appwrite.dart';
 import 'package:todo_app/models/task_model.dart';
 
 class AddTaskScreen extends StatefulWidget {
@@ -18,8 +18,6 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
   TextEditingController _dateController = TextEditingController();
 
   DateFormat formatter = DateFormat("yyyy-MM-dd");
-
-  DatabaseHelper helper = DatabaseHelper.instance;
 
   @override
   void initState() {
@@ -54,7 +52,9 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
       _formkey.currentState!.save();
       // insert to the db
       var newTask = Task(title: _title, date: _date, status: 0);
-      helper.insertTask(newTask);
+      Future result = db.createDocument(
+          collectionId: "61349088f0737", data: newTask.toMap());
+      result.then((value) => print(value)).catchError((error) => print(error));
     }
   }
 
@@ -94,7 +94,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                             border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(10.0))),
                         validator: (input) =>
-                            input!.isEmpty ? "Please enter a title" : null,
+                            input!.isEmpty ? "Please enter a task title" : null,
                         onSaved: (input) => _title = input!,
                         initialValue: _title,
                       ),

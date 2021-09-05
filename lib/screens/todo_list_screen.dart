@@ -1,8 +1,6 @@
-import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:todo_app/helpers/database_helper.dart';
+import 'package:todo_app/appwrite.dart';
 import 'package:todo_app/models/task_model.dart';
 import 'package:todo_app/screens/add_task_screen.dart';
 
@@ -12,7 +10,7 @@ class TodoListScreen extends StatefulWidget {
 }
 
 class TodoListScreenState extends State<TodoListScreen> {
-  late Future<List<Task>> _taskList;
+  late List<Task> _taskList;
 
   DateFormat formatter = DateFormat("yyyy-MM-dd");
 
@@ -24,10 +22,18 @@ class TodoListScreenState extends State<TodoListScreen> {
 
   _updateTaskList() {
     setState(() {
-      _taskList = DatabaseHelper.instance.getTaskList();
+      _taskList = [
+        Task(title: "Learn flutter", date: DateTime.now(), status: 0)
+      ];
     });
   }
 
+  fetchTasks() async {
+    var response = await db.listDocuments(collectionId: "61349088f0737");
+    return response;
+  }
+
+  // Build task Widget
   Widget _buildTask(Task task) {
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: 25.0),
@@ -54,8 +60,6 @@ class TodoListScreenState extends State<TodoListScreen> {
               value: false,
               onChanged: (value) {
                 task.status = value! ? 1 : 0;
-                DatabaseHelper.instance.updateTask(task);
-                _updateTaskList();
               },
             ),
             onTap: () {
@@ -81,54 +85,56 @@ class TodoListScreenState extends State<TodoListScreen> {
         ],
       ),
       body: FutureBuilder(
-          future: _taskList,
-          builder: (context, AsyncSnapshot<List<Task>> snapshot) {
-            if (!snapshot.hasData) {
-              return Center(
-                child: CircularProgressIndicator(),
-              );
-            }
+        future: fetchTasks(),
+        builder: (BuildContext context, AsyncSnapshot snapshot) {
+          if (!snapshot.hasData) {
+            return Center(
+              child: CircularProgressIndicator(),
+            );
+          }
+          return ListView.builder(
+              padding: EdgeInsets.symmetric(vertical: 8.0),
+              itemCount: snapshot.data['sum'] + 1,
+              itemBuilder: (BuildContext context, int index) {
+                if (index == 0) {
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(
+                        vertical: 20.0, horizontal: 40.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          "My Taks",
+                          style: TextStyle(
+                            fontSize: 40.0,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        SizedBox(
+                          height: 10,
+                        ),
+                        Text(
+                          "count",
+                          style: TextStyle(
+                            fontSize: 20,
+                            color: Colors.grey,
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                }
+                // build a new task to the screen
 
-            final int completedTaskCount = snapshot.data!
-                .where((Task task) => task.status == 1)
-                .toList()
-                .length;
-
-            return ListView.builder(
-                padding: EdgeInsets.symmetric(vertical: 8.0),
-                itemCount: 1 + snapshot.data!.length,
-                itemBuilder: (BuildContext context, int index) {
-                  if (index == 0) {
-                    return Padding(
-                      padding: const EdgeInsets.symmetric(
-                          vertical: 20.0, horizontal: 40.0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            "My Taks",
-                            style: TextStyle(
-                              fontSize: 40.0,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          SizedBox(
-                            height: 10,
-                          ),
-                          Text(
-                            "$completedTaskCount of ${snapshot.data!.length}",
-                            style: TextStyle(
-                              fontSize: 20,
-                              color: Colors.grey,
-                            ),
-                          ),
-                        ],
-                      ),
-                    );
-                  }
-                  return _buildTask(snapshot.data![index - 1]);
-                });
-          }),
+                return _buildTask(Task.fromMap({
+                  "id": snapshot.data['documents'][index]['id'],
+                  'title': snapshot.data['documents'][index]['title'],
+                  'date': snapshot.data['documents'][index]['date'],
+                  'status': snapshot.data['documents'][index]['status']
+                }));
+              });
+        },
+      ),
       floatingActionButton: FloatingActionButton(
         // navigate to add task screen
         onPressed: () => Navigator.push(
