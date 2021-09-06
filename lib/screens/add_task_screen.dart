@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:todo_app/appwrite.dart';
+// import 'package:todo_app/appwrite.dart';
 import 'package:todo_app/models/task_model.dart';
 
 class AddTaskScreen extends StatefulWidget {
@@ -51,10 +51,11 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
     if (_formkey.currentState!.validate()) {
       _formkey.currentState!.save();
       // insert to the db
-      var newTask = Task(title: _title, date: _date, status: 0);
-      Future result = db.createDocument(
-          collectionId: "61349088f0737", data: newTask.toMap());
-      result.then((value) => print(value)).catchError((error) => print(error));
+      var newTask = Task(title: _title, date: _date, status: false);
+      // Future result = db.createDocument(
+      //     collectionId: "61349088f0737", data: newTask.toMap());
+      // result.then((value) => print(value)).catchError((error) => print(error));
+      Navigator.pop(context, newTask);
     }
   }
 

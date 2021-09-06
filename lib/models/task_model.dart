@@ -2,7 +2,7 @@ class Task {
   int? id;
   String title;
   DateTime date;
-  int status;
+  bool status;
 
   Task({required this.title, required this.date, required this.status});
   Task.withId(
